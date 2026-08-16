@@ -1,0 +1,21 @@
+/* ... existing css ... */
+
+.reservation-form {
+  margin: 15px 0;
+  text-align: left;
+}
+
+.reservation-form label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+.reservation-form input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box; /* Ensures padding doesn't widen the input */
+}

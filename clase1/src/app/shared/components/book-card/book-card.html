@@ -1,0 +1,29 @@
+<div class="card">
+  <img [src]="book.portadaUrl" alt="Portada" class="cover">
+  
+  <div class="card-body">
+    <h2>{{ book.titulo }}</h2>
+    <p class="author">Autor: {{ book.autor }}</p>
+    <p class="stock">Ejemplares: {{ book.ejemplaresRestantes }}</p>
+    
+    <!-- Agregamos la sección para el input del usuario -->
+    <div class="reservation-form">
+      <label for="nombreInput">Tu Nombre:</label>
+      <!-- #nombreRef es una Variable de Referencia de Plantilla -->
+      <!-- [value] setea un valor por defecto para probar -->
+      <input 
+        type="text" 
+        id="nombreInput" 
+        [(ngModel)]="nombreLector"
+        placeholder="Ej: Manuel Quintana"
+      >
+    </div>
+
+    <!-- Pasamos el valor de la referencia al método -->
+    <button 
+      [disabled]="!book.disponible" 
+      (click)="prestarLibro(nombreLector)">
+      Reservar
+    </button>
+  </div>
+</div>
