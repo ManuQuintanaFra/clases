@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Book } from '../../../core/components/models/book.interface';
+import { Book } from '../../../core/models/book.interface';
 import { FormsModule } from '@angular/forms';
 
 @Component({
