@@ -1,0 +1,45 @@
+<!-- Property Binding: [src] bindea la URL de la portada -->
+<!-- Class Binding: [class.agotado] agrega la clase 'agotado' cuando no hay stock -->
+<!-- Style Binding: [style.opacity] cambia la opacidad si no está disponible -->
+<!-- Attribute Binding: [attr.aria-label] para accesibilidad -->
+<div class="card" 
+  [class.agotado]="!book().disponible"
+  [style.opacity]="book().disponible ? '1' : '0.6'">
+  
+  <!-- Property Binding -->
+  <img [src]="book().portadaUrl" 
+       [attr.alt]="'Portada de ' + book().titulo" 
+       class="cover">
+  
+  <div class="card-body">
+    <!-- Interpolación: {{ }} muestra valores en el template -->
+    <h2>{{ book().titulo }}</h2>
+    <p class="author">Autor: {{ book().autor }}</p>
+    <p class="genre">Género: {{ book().genero }} · {{ book().anioPublicacion }}</p>
+    <p class="stock">Ejemplares: {{ book().ejemplaresRestantes }}</p>
+    
+    @if (book().disponible) {
+      <div class="reservation-form">
+        <label for="nombreInput">Tu Nombre:</label>
+        <!-- Event Binding: (input) escucha el evento input para actualizar el signal -->
+        <input 
+          type="text" 
+          id="nombreInput" 
+          [value]="nombreLector()"
+          (input)="actualizarNombre($event)"
+          placeholder="Ej: Manuel Quintana"
+        >
+      </div>
+
+      <!-- Event Binding: (click) ejecuta el método al hacer click -->
+      <!-- Property Binding: [disabled] deshabilita si no hay stock -->
+      <button 
+        [disabled]="!book().disponible" 
+        (click)="prestarLibro()">
+        📖 Reservar
+      </button>
+    } @else {
+      <p class="no-stock">❌ Sin ejemplares disponibles</p>
+    }
+  </div>
+</div>

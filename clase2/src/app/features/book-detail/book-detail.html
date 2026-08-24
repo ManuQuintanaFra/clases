@@ -1,0 +1,28 @@
+<section class="detail-container">
+  @if (libro(); as libroActual) {
+    <div class="detail-card">
+      <img [src]="libroActual.portadaUrl" [attr.alt]="'Portada de ' + libroActual.titulo" class="detail-cover">
+      
+      <div class="detail-info">
+        <h1>{{ libroActual.titulo }}</h1>
+        <p class="detail-author">✍️ {{ libroActual.autor }}</p>
+        <p class="detail-genre">📂 Género: {{ libroActual.genero }}</p>
+        <p class="detail-year">📅 Año: {{ libroActual.anioPublicacion }}</p>
+        <p class="detail-stock" 
+           [class.available]="libroActual.disponible"
+           [class.unavailable]="!libroActual.disponible">
+          {{ libroActual.disponible ? '✅ Disponible' : '❌ No disponible' }} 
+          ({{ libroActual.ejemplaresRestantes }} ejemplares)
+        </p>
+      </div>
+    </div>
+  } @else {
+    <div class="not-found">
+      <h2>📭 Libro no encontrado</h2>
+      <p>El libro con ID "{{ id() }}" no existe en el catálogo.</p>
+    </div>
+  }
+
+  <!-- Navegación programática: volver al home -->
+  <button class="back-btn" (click)="volver()">← Volver al Catálogo</button>
+</section>

@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { BookCardComponent } from '../../shared/components/book-card/book-card';
+import { BookCard} from '../../shared/components/book-card/book-card';
 
 @Component({
   selector: 'app-home',
-  imports: [BookCardComponent],
+  imports: [BookCard],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })

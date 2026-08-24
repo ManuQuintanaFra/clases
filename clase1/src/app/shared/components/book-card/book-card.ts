@@ -9,7 +9,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './book-card.html',
   styleUrl: './book-card.css'
 })
-export class BookCardComponent {
+export class BookCard {
 nombreLector!: string;
 book: Book = {
     id: '1',

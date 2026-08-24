@@ -1,0 +1,36 @@
+<section class="home-container">
+  <h2>📚 Catálogo de Libros</h2>
+
+  <!-- Two-way binding con model(): sincroniza el valor de búsqueda entre Home y SearchBar -->
+  <app-search-bar [(termino)]="filtroBusqueda" />
+
+  <!-- @if / @else — Control de flujo moderno para renderizado condicional -->
+  @if (librosFiltrados().length > 0) {
+    <div class="books-grid">
+      <!-- @for — Itera sobre la lista de libros filtrados (computed signal) -->
+      @for (libro of librosFiltrados(); track libro.id) {
+        <div class="book-wrapper">
+          <!-- input(): pasamos cada libro al componente hijo BookCard -->
+          <!-- output(): escuchamos el evento 'reservado' emitido por BookCard -->
+          <app-book-card 
+            [book]="libro" 
+            (reservado)="onLibroReservado($event)" 
+          />
+          <!-- Event binding + Navegación programática -->
+          <button class="detail-btn" (click)="verDetalle(libro.id)">
+            🔍 Ver Detalle
+          </button>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="no-results">
+      <p>😔 No se encontraron libros para "{{ filtroBusqueda() }}"</p>
+    </div>
+  }
+
+  <!-- router-outlet para RUTAS HIJAS (children) -->
+  <!-- Aquí se renderiza BookDetail cuando navegamos a /home/book/:id -->
+  <!-- Es el punto de inserción donde Angular inyecta el componente hijo de la ruta -->
+  <router-outlet />
+</section>
