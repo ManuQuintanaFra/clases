@@ -56,6 +56,7 @@ export class AuthService {
     if (error) {
       console.error('Error al cargar datos del usuario:', error.message);
     } else if (data) {
+
       this.currentUserData.set(data);
     }
   }

@@ -4,7 +4,7 @@ import { Book } from '../../../core/models/book.interface';
 import { AnioPublicacionPipe } from '../../pipes/anio-publicacion.pipe';
 import { AuthService } from '../../../core/services/auth.service';
 import { FavoritosService } from '../../../core/services/favoritos.service';
-import { HighlightDirective } from '../../directives/highlight.directive';
+import { HighlightDirective } from '../../directives/highlight.directives';
 
 @Component({
   selector: 'app-book-card',
