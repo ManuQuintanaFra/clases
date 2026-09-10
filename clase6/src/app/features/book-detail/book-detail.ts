@@ -2,11 +2,12 @@ import { Component, input, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BookService } from '../../core/services/book.service';
 import { AnioPublicacionPipe } from '../../shared/pipes/anio-publicacion.pipe';
+import { CopyClipBoard } from '../../shared/directives/copy-clip-board';
 
 @Component({
   selector: 'app-book-detail',
   // AnioPublicacionPipe — pipe personalizado para formatear el año de publicación
-  imports: [AnioPublicacionPipe],
+  imports: [AnioPublicacionPipe, CopyClipBoard],
   templateUrl: './book-detail.html',
   styleUrl: './book-detail.css'
 })

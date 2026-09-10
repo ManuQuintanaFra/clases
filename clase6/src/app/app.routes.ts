@@ -7,6 +7,7 @@ import { About } from './features/about/about';
 // import { RegisterComponent } from './features/auth/register/register';
 // import { FavoritosComponent } from './features/favoritos/favoritos';
 import { authGuard } from './core/guards/auth.guard';
+import { authAdminGuard } from './core/guards/auth-admin-guard';
 
 export const routes: Routes = [
   // Redirección: la ruta vacía redirige a /home
@@ -41,7 +42,9 @@ export const routes: Routes = [
     canActivate: [authGuard] 
   },
   // Ruta simple
-  { path: 'about', component: About },
+  { path: 'about', component: About ,
+    canActivate: [authAdminGuard]
+  },
 
   // Wildcard: cualquier ruta no definida redirige a /home
   { path: '**', redirectTo: '/home' }
