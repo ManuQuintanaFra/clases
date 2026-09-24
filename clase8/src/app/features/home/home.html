@@ -1,0 +1,34 @@
+<section class="home-container">
+  <h2>📚 Catálogo de Libros</h2>
+
+  <!-- Two-way binding con model(): sincroniza el valor de búsqueda entre Home y SearchBar -->
+  <app-search-bar [(termino)]="filtroBusqueda" />
+
+  <div class="books-grid">
+    <!-- @for — Itera sobre la lista de libros filtrados (computed signal) -->
+    <!-- @empty — Se muestra cuando la colección está vacía (reemplaza el @if/@else externo) -->
+    @for (libro of librosFiltrados(); track libro.id) {
+      <div class="book-wrapper">
+        <!-- input(): pasamos cada libro al componente hijo BookCard -->
+        <!-- output(): escuchamos el evento 'reservado' emitido por BookCard -->
+        <app-book-card 
+          [book]="libro" 
+          (reservado)="onLibroReservado($event)" 
+        />
+        <!-- Event binding + Navegación programática -->
+        <button class="detail-btn" (click)="verDetalle(libro.id)">
+          🔍 Ver Detalle
+        </button>
+      </div>
+    } @empty {
+      <!-- @empty se ejecuta cuando librosFiltrados() retorna un array vacío -->
+      <div class="no-results">
+        <p>😔 No se encontraron libros para "{{ filtroBusqueda() }}"</p>
+      </div>
+    }
+  </div>
+
+  <!-- router-outlet para RUTAS HIJAS (children) -->
+  <!-- Aquí se renderiza BookDetail cuando navegamos a /home/book/:id -->
+  <router-outlet />
+</section>

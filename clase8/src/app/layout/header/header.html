@@ -1,0 +1,22 @@
+<header class="navbar">
+  <div class="brand">
+    <h1>📚 Sistema de Biblioteca</h1>
+  </div>
+
+  <!-- Navegación declarativa con routerLink -->
+  <!-- routerLinkActive agrega la clase 'active' al link de la ruta actual -->
+  <nav class="nav-links">
+    <a routerLink="/home" routerLinkActive="active">🏠 Inicio</a>
+    <!-- *appRole — Directiva estructural: solo muestra el link si el usuario tiene rol 'admin' -->
+    <a *appRole="'admin'" routerLink="/add-book" routerLinkActive="active">➕ Agregar Libro</a>
+    <a routerLink="/about" routerLinkActive="active">ℹ️ Acerca de</a>
+    
+    <!-- Enlaces dinámicos según el estado de autenticación -->
+    @if (authService.currentUser()) {
+      <a routerLink="/favoritos" routerLinkActive="active">⭐ Favoritos</a>
+      <a href="#" (click)="logout(); $event.preventDefault()">🚪 Cerrar Sesión</a>
+    } @else {
+      <a routerLink="/login" routerLinkActive="active">🔑 Iniciar Sesión</a>
+    }
+  </nav>
+</header>

@@ -1,0 +1,51 @@
+<section class="favoritos-container">
+      <h2>⭐ Mis Libros Favoritos</h2>
+      
+      @if (favoritosService.cargando()) {
+        <p>Cargando favoritos...</p>
+      } @else if (favoritos().length === 0) {
+        <p class="empty-state">No tienes libros favoritos aún. ¡Busca en el catálogo y agrega algunos!</p>
+      } @else {
+        <div class="favoritos-grid">
+          @for (fav of favoritos(); track fav.id) {
+            <div class="favorito-card">
+              <!-- Los datos del libro vienen del JOIN con la tabla libros -->
+              <img [src]="fav.libros?.portada_url" [alt]="fav.libros?.titulo" class="cover">
+              <div class="info">
+                <h3>{{ fav.libros?.titulo }}</h3>
+                <p class="autor">✍️ {{ fav.libros?.autor }}</p>
+                <p class="genero">📂 {{ fav.libros?.genero }}</p>
+                
+                <!-- Estado del stock en tiempo real (gracias al JOIN) -->
+                @if (fav.libros) {
+                  <p class="stock" [class.agotado]="!fav.libros.disponible">
+                    {{ fav.libros.disponible 
+                      ? '✅ ' + fav.libros.ejemplares_restantes + ' disponibles' 
+                      : '❌ Agotado' }}
+                  </p>
+                }
+                
+                <!-- Modo visualización de nota -->
+                @if (editandoId !== fav.id) {
+                  <p class="nota"><strong>Mi nota:</strong> {{ fav.nota || 'Sin notas.' }}</p>
+                  <div class="actions">
+                    <button class="btn-edit" (click)="iniciarEdicion(fav)">✏️ Editar Nota</button>
+                    <button class="btn-delete" (click)="eliminar(fav.id!)">🗑️ Eliminar</button>
+                  </div>
+                } 
+                <!-- Modo edición de nota -->
+                @else {
+                  <div class="edit-nota-form">
+                    <input type="text" [formControl]="notaControl" placeholder="Escribe algo sobre este libro...">
+                    <div class="actions">
+                      <button class="btn-save" (click)="guardarNota(fav.id!)" [disabled]="notaControl.invalid">💾 Guardar</button>
+                      <button class="btn-cancel" (click)="cancelarEdicion()">❌ Cancelar</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
