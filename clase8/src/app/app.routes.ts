@@ -24,6 +24,7 @@ export const routes: Routes = [
       }
     ]
   },
+  
   // Ruta para agregar un nuevo libro
   { path: 'add-book',
     loadComponent: () => import('./features/add-book/add-book').then(c => c.AddBook),

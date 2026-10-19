@@ -1,0 +1,38 @@
+@baseUrl = http://localhost:3000
+
+### Crear un libro (201)
+POST {{baseUrl}}/libros
+Content-Type: application/json
+
+{
+  "titulo": "El principito",
+  "autor": "Antoine de Saint-Exupéry"
+}
+
+### Listar libros (200)
+GET {{baseUrl}}/libros
+
+### Buscar un libro (200 o 404)
+GET {{baseUrl}}/libros/1
+
+### Actualizar parte del libro (200 o 404)
+PATCH {{baseUrl}}/libros/1
+Content-Type: application/json
+
+{
+  "titulo": "El Principito"
+}
+
+### Eliminar un libro (204, sin cuerpo)
+DELETE {{baseUrl}}/libros/1
+
+### Consultar el libro eliminado (404)
+GET {{baseUrl}}/libros/1
+
+### Probar datos inválidos (400)
+POST {{baseUrl}}/libros
+Content-Type: application/json
+
+{
+  "titulo": ""
+}
