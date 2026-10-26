@@ -5,8 +5,6 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, isObjectIdOrHexString } from 'mongoose';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
 import { CrearLibroDto } from './dto/crear-libro.dto';
 import { ActualizarLibroDto } from './dto/actualizar-libro.dto';
 import { LibroMongo } from './libro.schema';
@@ -20,8 +18,7 @@ export class LibrosService {
   ) {}
 
   async crear(datos: CrearLibroDto): Promise<Libro> {
-    const dto = await this.validar(datos, CrearLibroDto);
-    return this.presentar(await this.modelo.create(dto));
+    return this.presentar(await this.modelo.create(datos));
   }
 
   async listar(): Promise<Libro[]> {
@@ -38,10 +35,9 @@ export class LibrosService {
 
   async actualizar(id: string, datos: ActualizarLibroDto): Promise<Libro> {
     this.validarId(id);
-    const dto = await this.validar(datos, ActualizarLibroDto);
     // Los campos ausentes del DTO no deben sobrescribir los datos guardados.
     const cambios = Object.fromEntries(
-      Object.entries(dto).filter(([, valor]) => valor !== undefined),
+      Object.entries(datos).filter(([, valor]) => valor !== undefined),
     );
     const libro = await this.modelo
       .findByIdAndUpdate(
@@ -80,34 +76,6 @@ export class LibrosService {
   private validarId(id: string): void {
     if (!isObjectIdOrHexString(id))
       throw new BadRequestException('ID de libro inválido');
-  }
-
-  // class-validator se ejecuta explícitamente en el servicio, sin pipes.
-  private async validar<T extends CrearLibroDto>(
-    datos: unknown,
-    clase: new () => T,
-  ): Promise<T> {
-    if (
-      !datos ||
-      typeof datos !== 'object' ||
-      Array.isArray(datos) ||
-      Object.keys(datos).length === 0
-    ) {
-      throw new BadRequestException(
-        'Enviá un objeto JSON con los datos del libro',
-      );
-    }
-    const dto = plainToInstance(clase, datos);
-    const errores = await validate(dto, {
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    });
-    if (errores.length) {
-      throw new BadRequestException(
-        errores.flatMap((error) => Object.values(error.constraints ?? {})),
-      );
-    }
-    return dto;
   }
 
   private presentar(libro: LibroDocument): Libro {

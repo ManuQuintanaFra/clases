@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import request from 'supertest';
@@ -78,6 +78,13 @@ describe('Libros HTTP (persistencia simulada)', () => {
       ],
     }).compile();
     app = modulo.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
     app.enableCors({ origin: 'http://localhost:4200' });
     await app.init();
   });
@@ -131,7 +138,7 @@ describe('Libros HTTP (persistencia simulada)', () => {
       .expect(404);
   });
 
-  it('valida creación y actualización con class-validator sin pipes', async () => {
+  it('valida creación y actualización con ValidationPipe', async () => {
     const api = request(app.getHttpServer());
     for (const invalido of [
       {},
@@ -147,8 +154,8 @@ describe('Libros HTTP (persistencia simulada)', () => {
       await api.post('/libros').send(invalido).expect(400);
     const creado = await api.post('/libros').send(datos).expect(201);
     const { id } = creado.body as { id: string };
+    await api.patch('/libros/' + id).send({}).expect(200).expect(creado.body);
     for (const invalido of [
-      {},
       { autor: null },
       { titulo: '' },
       { id: 'otro' },

@@ -2,7 +2,7 @@
 
 El frontend está en ../clase8 y el backend en clase9.
 Se migró únicamente el catálogo de libros. Autenticación, usuarios y favoritos
-continúan usando Supabase. No se incorporaron JWT, guards, pipes, Multer ni Cloudinary
+continúan usando Supabase. No se incorporaron JWT, guards, Multer ni Cloudinary
 en Nest. Las portadas se envían como URLs.
 
 ## Iniciar
@@ -38,8 +38,10 @@ El cliente envía titulo, autor, genero, portada_url, aniopublicacion y
 ejemplares_restantes. Nest devuelve además id (string, basado en el ObjectId de Mongo)
 y disponible (calculado a partir del stock). No se permite modificar id ni disponible.
 
-Los DTOs usan class-validator. El servicio los convierte y valida explícitamente
-con plainToInstance y validate, sin ValidationPipe. Datos inválidos devuelven 400;
+Los DTOs usan class-validator. Un ValidationPipe global convierte los datos a DTOs
+y los valida antes de llamar al controlador, con transform, whitelist y
+forbidNonWhitelisted activados. Los campos no permitidos se rechazan.
+Un PATCH con un objeto vacío no modifica el libro. Datos inválidos devuelven 400;
 un ID válido que no existe devuelve 404. Reservar sin stock devuelve 400.
 El descuento es una operación atómica de MongoDB para evitar stock negativo.
 
