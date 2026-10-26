@@ -1,0 +1,45 @@
+@baseUrl = http://localhost:3000
+# Copiar aquí el id que devuelve POST /libros.
+@id = 000000000000000000000000
+
+### Crear
+POST {{baseUrl}}/libros
+Content-Type: application/json
+
+{
+  "titulo": "El principito",
+  "autor": "Antoine de Saint-Exupéry",
+  "genero": "Fábula",
+  "portada_url": "https://example.com/portada.jpg",
+  "aniopublicacion": 1943,
+  "ejemplares_restantes": 3
+}
+
+### Listar
+GET {{baseUrl}}/libros
+
+### Buscar
+GET {{baseUrl}}/libros/{{id}}
+
+### Actualizar
+PATCH {{baseUrl}}/libros/{{id}}
+Content-Type: application/json
+
+{
+  "titulo": "El Principito",
+  "ejemplares_restantes": 2
+}
+
+### Reservar
+POST {{baseUrl}}/libros/{{id}}/reservar
+
+### Eliminar
+DELETE {{baseUrl}}/libros/{{id}}
+
+### Datos inválidos (400)
+POST {{baseUrl}}/libros
+Content-Type: application/json
+
+{
+  "titulo": ""
+}
