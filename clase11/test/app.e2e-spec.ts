@@ -1,0 +1,290 @@
+import { Test } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
+import request from 'supertest';
+import { App } from 'supertest/types';
+import { LibrosController } from '../src/libros/libros.controller';
+import { LibrosService } from '../src/libros/libros.service';
+import { LibroMongo } from '../src/libros/libro.schema';
+import { PortadasService } from '../src/libros/portadas.service';
+import sharp from 'sharp';
+
+type Registro = LibroMongo & { _id: Types.ObjectId };
+
+// Doble de persistencia: prueba HTTP, DTOs y servicio sin requerir Mongo local.
+function crearModeloDePrueba() {
+  const registros = new Map<string, Registro>();
+  const consulta = <T>(valor: T) => ({ exec: () => Promise.resolve(valor) });
+  return {
+    create: (datos: LibroMongo) => {
+      const libro = { ...datos, _id: new Types.ObjectId() };
+      registros.set(libro._id.toString(), libro);
+      return Promise.resolve(libro);
+    },
+    find: () => ({
+      sort: () =>
+        consulta(
+          [...registros.values()].sort((a, b) =>
+            a.titulo.localeCompare(b.titulo),
+          ),
+        ),
+    }),
+    findById: (id: string) => consulta(registros.get(id) ?? null),
+    findByIdAndUpdate: (
+      id: string,
+      cambio: { $set: Partial<LibroMongo> },
+      opciones: { new: boolean },
+    ) => {
+      const libro = registros.get(id);
+      const anterior = libro ? { ...libro } : null;
+      if (libro) Object.assign(libro, cambio.$set);
+      return consulta(opciones.new ? (libro ?? null) : anterior);
+    },
+    findByIdAndDelete: (id: string) => {
+      const libro = registros.get(id);
+      registros.delete(id);
+      return consulta(libro ?? null);
+    },
+    findOneAndUpdate: (
+      filtro: { _id: string; ejemplares_restantes: { $gt: number } },
+      cambio: { $inc: { ejemplares_restantes: number } },
+    ) => {
+      const libro = registros.get(filtro._id);
+      if (
+        !libro ||
+        libro.ejemplares_restantes <= filtro.ejemplares_restantes.$gt
+      )
+        return consulta(null);
+      libro.ejemplares_restantes += cambio.$inc.ejemplares_restantes;
+      return consulta(libro);
+    },
+  };
+}
+
+describe('Libros HTTP (persistencia simulada)', () => {
+  let app: INestApplication<App>;
+  const datos = {
+    titulo: 'El principito',
+    autor: 'Antoine de Saint-Exupéry',
+    genero: 'Fábula',
+    portada_url: 'https://example.com/portada.jpg',
+    aniopublicacion: 1943,
+    ejemplares_restantes: 1,
+  };
+
+  beforeEach(async () => {
+    const modulo = await Test.createTestingModule({
+      controllers: [LibrosController],
+      providers: [
+        LibrosService,
+        PortadasService,
+        {
+          provide: getModelToken(LibroMongo.name),
+          useValue: crearModeloDePrueba(),
+        },
+      ],
+    }).compile();
+    app = modulo.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
+    app.enableCors({ origin: 'http://localhost:4200' });
+    await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('conserva el contrato del catálogo durante todo el CRUD', async () => {
+    const api = request(app.getHttpServer());
+    await api.get('/libros').expect(200).expect([]);
+    const creado = await api.post('/libros').send(datos).expect(201);
+    const libro = creado.body as { id: string };
+    expect(libro.id).toMatch(/^[a-f0-9]{24}$/);
+    expect(creado.body).toEqual({ ...datos, id: libro.id, disponible: true });
+    await api.get('/libros').expect(200).expect([creado.body]);
+    await api
+      .get('/libros/' + libro.id)
+      .expect(200)
+      .expect(creado.body);
+    await api
+      .patch('/libros/' + libro.id)
+      .send({ titulo: 'Nuevo título', ejemplares_restantes: 0 })
+      .expect(200)
+      .expect({
+        ...datos,
+        id: libro.id,
+        titulo: 'Nuevo título',
+        ejemplares_restantes: 0,
+        disponible: false,
+      });
+    await api
+      .delete('/libros/' + libro.id)
+      .expect(204)
+      .expect('');
+    await api.get('/libros/' + libro.id).expect(404);
+    await api.delete('/libros/' + libro.id).expect(404);
+  });
+
+  it('reserva el último ejemplar y rechaza reservas sin stock', async () => {
+    const api = request(app.getHttpServer());
+    const creado = await api.post('/libros').send(datos).expect(201);
+    const { id } = creado.body as { id: string };
+    await api
+      .post('/libros/' + id + '/reservar')
+      .expect(200)
+      .expect({ ...datos, id, ejemplares_restantes: 0, disponible: false });
+    await api.post('/libros/' + id + '/reservar').expect(400);
+    await api
+      .post('/libros/' + new Types.ObjectId().toString() + '/reservar')
+      .expect(404);
+  });
+
+  it('valida creación y actualización con ValidationPipe', async () => {
+    const api = request(app.getHttpServer());
+    for (const invalido of [
+      {},
+      { ...datos, titulo: '   ' },
+      { ...datos, autor: 123 },
+      { ...datos, portada_url: 'archivo.jpg' },
+      { ...datos, ejemplares_restantes: -1 },
+      { ...datos, ejemplares_restantes: 1.5 },
+      { ...datos, aniopublicacion: 999 },
+      { ...datos, disponible: true },
+      { ...datos, id: 'elegido-por-cliente' },
+    ])
+      await api.post('/libros').send(invalido).expect(400);
+    const creado = await api.post('/libros').send(datos).expect(201);
+    const { id } = creado.body as { id: string };
+    await api
+      .patch('/libros/' + id)
+      .send({})
+      .expect(200)
+      .expect(creado.body);
+    for (const invalido of [
+      { autor: null },
+      { titulo: '' },
+      { id: 'otro' },
+      { disponible: false },
+    ]) {
+      await api
+        .patch('/libros/' + id)
+        .send(invalido)
+        .expect(400);
+    }
+    await api.get('/libros/abc').expect(400);
+    await api
+      .patch('/libros/' + new Types.ObjectId().toString())
+      .send({ titulo: 'Otro' })
+      .expect(404);
+  });
+
+  it('permite peticiones del frontend por CORS', async () => {
+    await request(app.getHttpServer())
+      .options('/libros')
+      .set('Origin', 'http://localhost:4200')
+      .set('Access-Control-Request-Method', 'POST')
+      .expect(204)
+      .expect('Access-Control-Allow-Origin', 'http://localhost:4200');
+  });
+
+  it('crea el libro y sube la portada en un único POST multipart', async () => {
+    const servicio = app.get(PortadasService);
+    const subir = jest.spyOn(servicio, 'subir').mockResolvedValue({
+      url: 'https://res.cloudinary.com/demo/uno.webp',
+      publicId: 'uno',
+    });
+    const eliminar = jest.spyOn(servicio, 'eliminar').mockResolvedValue();
+    const api = request(app.getHttpServer());
+    const png = await sharp({
+      create: { width: 10, height: 10, channels: 3, background: 'red' },
+    })
+      .png()
+      .toBuffer();
+    const respuesta = await api
+      .post('/libros')
+      .field('titulo', datos.titulo)
+      .field('autor', datos.autor)
+      .field('genero', datos.genero)
+      .field('aniopublicacion', '1943')
+      .field('ejemplares_restantes', '1')
+      .attach('portada', png, 'foto.png')
+      .expect(201);
+    const libro = respuesta.body as { id: string; portada_url: string };
+    expect(respuesta.body).toEqual({
+      ...datos,
+      id: libro.id,
+      portada_url: 'https://res.cloudinary.com/demo/uno.webp',
+      disponible: true,
+    });
+    expect((await sharp(subir.mock.calls[0][0]).metadata()).format).toBe(
+      'webp',
+    );
+    await api
+      .get('/libros/' + libro.id)
+      .expect(200)
+      .expect(respuesta.body);
+    await api.post('/libros/' + libro.id + '/portada').expect(404);
+    await api.delete('/libros/' + libro.id).expect(204);
+    expect(eliminar).toHaveBeenCalledWith('uno');
+  });
+
+  it('rechaza archivos y campos inválidos sin subir ni crear libros', async () => {
+    const subir = jest.spyOn(app.get(PortadasService), 'subir');
+    const api = request(app.getHttpServer());
+    const formulario = () =>
+      api
+        .post('/libros')
+        .field('titulo', datos.titulo)
+        .field('autor', datos.autor)
+        .field('genero', datos.genero)
+        .field('aniopublicacion', '1943')
+        .field('ejemplares_restantes', '1');
+    await formulario()
+      .attach('portada', Buffer.from('<svg/>'), {
+        filename: 'foto.jpg',
+        contentType: 'image/jpeg',
+      })
+      .expect(400);
+    await formulario().attach('otro', Buffer.from('x'), 'x.png').expect(400);
+    await formulario()
+      .field('public_id', 'elegido')
+      .attach('portada', Buffer.from('x'), 'a.png')
+      .expect(400);
+    await formulario()
+      .attach('portada', Buffer.alloc(5 * 1024 * 1024 + 1), 'foto.png')
+      .expect(413);
+    await formulario()
+      .attach('portada', Buffer.from('x'), 'a.png')
+      .attach('portada', Buffer.from('x'), 'b.png')
+      .expect(400);
+    const png = await sharp({
+      create: { width: 10, height: 10, channels: 3, background: 'red' },
+    })
+      .png()
+      .toBuffer();
+    for (const valor of ['', 'abc', '1.5', '-1']) {
+      await api
+        .post('/libros')
+        .field('titulo', datos.titulo)
+        .field('autor', datos.autor)
+        .field('genero', datos.genero)
+        .field('aniopublicacion', '1943')
+        .field('ejemplares_restantes', valor)
+        .attach('portada', png, 'foto.png')
+        .expect(400);
+    }
+    await formulario()
+      .field('portada_url', datos.portada_url)
+      .attach('portada', png, 'foto.png')
+      .expect(400);
+    await api.get('/libros').expect(200).expect([]);
+    expect(subir).not.toHaveBeenCalled();
+  });
+});
