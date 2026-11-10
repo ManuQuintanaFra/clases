@@ -21,15 +21,15 @@ export class LibrosService {
 
   async crear(
     datos: CrearLibroDto,
-    archivo?: Express.Multer.File,
+    portada?: Buffer,
   ): Promise<Libro> {
-    if (!archivo) return this.presentar(await this.modelo.create(datos));
+    if (!portada) return this.presentar(await this.modelo.create(datos));
     if (datos.portada_url !== undefined)
       throw new BadRequestException(
         'Enviá portada como archivo o portada_url, no ambos',
       );
-    const buffer = await this.portadas.normalizar(archivo);
-    const subida = await this.portadas.subir(buffer);
+
+    const subida = await this.portadas.subir(portada);
     try {
       return this.presentar(
         await this.modelo.create({

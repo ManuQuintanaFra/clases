@@ -39,12 +39,9 @@ no se admite también `portada_url`. Sin archivo ni URL se crea sin portada.
 
 - Multer 2.5 o posterior, también en la dependencia interna de Nest.
 - Un archivo de hasta 5 MiB por petición; hasta seis campos de texto de 4 KiB cada uno y sin disco temporal.
-- Firma binaria JPEG, PNG o WebP y decodificación real con Sharp. Se rechazan SVG,
-  PDF, ejecutables, imágenes corruptas, animaciones y más de 20 millones de píxeles.
-- Recodificación a WebP de hasta 1600 x 1600, sin metadatos ni contenido añadido.
-  El nombre y MIME declarados por el cliente no determinan el formato admitido.
-- Hasta cuatro subidas simultáneas por proceso, incluyendo recepción y conversión.
-- Cloudinary recibe solo el resultado recodificado, como imagen, con un identificador
+- Nest comprueba la firma binaria según la extensión (.jpg, .jpeg, .png o .webp).
+- Hasta cuatro subidas simultáneas por proceso.
+- Cloudinary recibe el archivo original como imagen, con un identificador
   aleatorio generado en el servidor y sin sobrescritura.
 - Se elimina la portada al borrar el libro. Si falla la creación en Mongo,
   se intenta borrar la subida nueva. Fallos de limpieza quedan registrados para

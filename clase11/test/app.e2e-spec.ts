@@ -223,9 +223,7 @@ describe('Libros HTTP (persistencia simulada)', () => {
       portada_url: 'https://res.cloudinary.com/demo/uno.webp',
       disponible: true,
     });
-    expect((await sharp(subir.mock.calls[0][0]).metadata()).format).toBe(
-      'webp',
-    );
+    expect(subir).toHaveBeenCalledWith(png);
     await api
       .get('/libros/' + libro.id)
       .expect(200)
@@ -269,6 +267,7 @@ describe('Libros HTTP (persistencia simulada)', () => {
     })
       .png()
       .toBuffer();
+    await formulario().attach('portada', png, 'foto.jpg').expect(400);
     for (const valor of ['', 'abc', '1.5', '-1']) {
       await api
         .post('/libros')

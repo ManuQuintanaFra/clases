@@ -10,7 +10,6 @@ describe('Creación con portada', () => {
       create: jest.fn().mockRejectedValue(new Error('Mongo no disponible')),
     };
     const portadas = {
-      normalizar: jest.fn().mockResolvedValue(Buffer.from('webp')),
       subir: jest.fn().mockResolvedValue({
         url: 'https://example.com/nueva.webp',
         publicId: 'nueva',
@@ -24,7 +23,7 @@ describe('Creación con portada', () => {
     await expect(
       servicio.crear(
         { titulo: 'Libro' } as CrearLibroDto,
-        { buffer: Buffer.from('imagen') } as Express.Multer.File,
+        Buffer.from('webp'),
       ),
     ).rejects.toThrow('Mongo no disponible');
     expect(portadas.eliminar).toHaveBeenCalledWith('nueva');
