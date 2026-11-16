@@ -9,6 +9,7 @@ import { Model, mongo } from 'mongoose';
 import { Usuario } from './usuario.schema';
 import { CredencialesDto } from './credenciales.dto';
 import { RegistroDto } from './registro.dto';
+import type { Rol } from './rol';
 
 import * as bcrypt from 'bcrypt';
 
@@ -27,7 +28,7 @@ export class AuthService {
         apellido: datos.apellido,
         passwordHash: await bcrypt.hash(datos.password, 10),
       });
-      return this.token(usuario.id as string, usuario.email);
+      return this.token(usuario.id as string, usuario.email, usuario.rol);
     } catch (error) {
       if (error instanceof mongo.MongoServerError && error.code === 11000) {
         throw new ConflictException('El email ya está registrado');
@@ -50,12 +51,13 @@ export class AuthService {
     if (!passwordValida) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
-    return this.token(usuario.id as string, usuario.email);
+    return this.token(usuario.id as string, usuario.email, usuario.rol);
   }
 
-  private async token(id: string, email: string) {
+  private async token(id: string, email: string, rol: Rol) {
     return {
-      access_token: await this.jwt.signAsync({ sub: id, email }),
+      // El rol viaja en el JWT para que RolesGuard no tenga que ir a la base.
+      access_token: await this.jwt.signAsync({ sub: id, email, rol }),
       token_type: 'Bearer',
       expires_in: 3600,
     };

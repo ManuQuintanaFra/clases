@@ -1,10 +1,12 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
+import type { Rol } from '../../auth/rol';
 
 // Lo que devuelve JwtStrategy.validate() y Passport guarda en req.user.
 export interface UsuarioJwt {
   sub: string;
   email: string;
+  rol: Rol;
 }
 
 // Decorador de parámetro: extrae el usuario autenticado de la request.

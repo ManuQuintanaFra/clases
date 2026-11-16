@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import type { Rol } from './rol';
 
 @Schema({ collection: 'usuarios', timestamps: true })
 export class Usuario {
@@ -8,8 +9,8 @@ export class Usuario {
   @Prop({ default: '' })
   apellido!: string;
 
-  @Prop({ default: 'user', enum: ['user', 'admin'] })
-  rol!: string;
+  @Prop({ type: String, default: 'user', enum: ['user', 'admin'] })
+  rol!: Rol;
 
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   email!: string;

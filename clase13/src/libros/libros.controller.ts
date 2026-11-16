@@ -20,14 +20,19 @@ import { ActualizarLibroDto } from './dto/actualizar-libro.dto';
 import { LibrosService } from './libros.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { PortadaPipe } from './portada.pipe';
 
 // El controlador conecta las peticiones HTTP con el servicio.
+// Orden de guards: primero JwtAuthGuard (carga req.user), después RolesGuard.
 @Controller('libros')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class LibrosController {
   constructor(private readonly librosService: LibrosService) {}
 
   @Post()
+  @Roles('admin')
   @UseInterceptors(
     PortadasInterceptor,
     FileInterceptor('portada', {
@@ -44,7 +49,7 @@ export class LibrosController {
   )
   crear(
     @Body() datos: CrearLibroDto,
-    @UploadedFile() archivo?: Express.Multer.File,
+    @UploadedFile(PortadaPipe) archivo?: Express.Multer.File,
   ) {
     return this.librosService.crear(datos, archivo?.buffer);
   }
@@ -60,6 +65,7 @@ export class LibrosController {
   }
 
   @Patch(':id')
+  @Roles('admin')
   actualizar(
     @Param('id', ParseMongoIdPipe) id: string,
     @Body() datos: ActualizarLibroDto,
@@ -68,6 +74,7 @@ export class LibrosController {
   }
 
   @Delete(':id')
+  @Roles('admin')
   @HttpCode(204)
   eliminar(@Param('id', ParseMongoIdPipe) id: string) {
     return this.librosService.eliminar(id);
