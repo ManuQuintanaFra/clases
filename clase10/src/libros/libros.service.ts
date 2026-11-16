@@ -10,15 +10,39 @@ import { ActualizarLibroDto } from './dto/actualizar-libro.dto';
 import { LibroMongo } from './libro.schema';
 import type { LibroDocument } from './libro.schema';
 import type { Libro } from './libro';
+import { PortadasService } from 'src/portadas/portadas.service';
+import { throwError } from 'rxjs';
 
 @Injectable()
 export class LibrosService {
   constructor(
     @InjectModel(LibroMongo.name) private readonly modelo: Model<LibroMongo>,
+    private readonly portadas : PortadasService
   ) {}
 
-  async crear(datos: CrearLibroDto): Promise<Libro> {
-    return this.presentar(await this.modelo.create(datos));
+  async crear(datos: CrearLibroDto, portada? : Buffer): Promise<Libro> {
+
+    if(!portada)return this.presentar(await this.modelo.create(datos));
+
+    //SUBIO PORTADA VIA FORM DATA
+
+    if(datos.portada_url !== undefined){
+      throw new BadRequestException("Envia portada como archivo o como url, no ambas")
+    }
+    //SI NO MANDO PORTADA URL COMO JSON Y SOLO LA SUBIO VIA FORMDATA
+    const subida = await this.portadas.subir(portada);
+
+    try{
+      return this.presentar(await this.modelo.create({
+        ...datos,
+        portada_url: subida.url,
+        portada_public_id : subida.publicId,
+      }))
+
+    }catch(error){
+      await this.portadas.eliminar(subida.publicId);
+      throw error;
+    }
   }
 
   async listar(): Promise<Libro[]> {
@@ -51,9 +75,16 @@ export class LibrosService {
   }
 
   async eliminar(id: string): Promise<void> {
+     
     this.validarId(id);
-    const libro = await this.modelo.findByIdAndDelete(id).exec();
+    const libro = await this.modelo.findById(id).exec();
+
     if (!libro) throw new NotFoundException('No existe el libro');
+
+    if (libro.portada_public_id)
+      await this.portadas.eliminar(libro.portada_public_id);
+    
+    await this.modelo.findByIdAndDelete(id).exec();
   }
 
   async reservar(id: string): Promise<Libro> {
@@ -72,6 +103,17 @@ export class LibrosService {
     }
     return this.presentar(libro);
   }
+
+  /* 
+    this.validarId(id);
+    const libro = await this.modelo.findById(id).exec();
+
+    if (!libro) throw new NotFoundException('No existe el libro');
+
+    if (libro.portada_public_id)
+      await this.portadas.eliminar(libro.portada_public_id);
+    
+    await this.modelo.findByIdAndDelete(id).exec();*/
 
   private validarId(id: string): void {
     if (!isObjectIdOrHexString(id))

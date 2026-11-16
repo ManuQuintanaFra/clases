@@ -43,9 +43,11 @@ no se admite también `portada_url`. Sin archivo ni URL se crea sin portada.
 - Hasta cuatro subidas simultáneas por proceso.
 - Cloudinary recibe el archivo original como imagen, con un identificador
   aleatorio generado en el servidor y sin sobrescritura.
-- Se elimina la portada al borrar el libro. Si falla la creación en Mongo,
-  se intenta borrar la subida nueva. Fallos de limpieza quedan registrados para
-  reconciliación manual; no hay una transacción distribuida ni cola de reintentos.
+- Al borrar el libro, primero se elimina la portada con el `portada_public_id`
+  guardado en Mongo. Si Cloudinary falla, el registro se conserva para poder
+  reintentar el DELETE. Si la imagen ya fue eliminada, el borrado continúa.
+- Si falla la creación en Mongo, se intenta borrar la subida nueva. Si esa
+  limpieza también falla, el servidor registra el identificador para revisión.
 
 Por compatibilidad, el CRUD todavía admite `portada_url` externa. Esas URLs no se
 descargan ni se inspeccionan y quedan fuera de las garantías del endpoint de archivos.

@@ -7,10 +7,17 @@ import {
   Param,
   Patch,
   Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CrearLibroDto } from './dto/crear-libro.dto';
 import { ActualizarLibroDto } from './dto/actualizar-libro.dto';
 import { LibrosService } from './libros.service';
+import { PortadasInterceptor } from 'src/portadas/portadas.interceptor';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { MAX_PORTADA_BYTES } from 'src/portadas/portadas.service';
+import { PortadasPipe } from 'src/portadas/portadas.pipe';
 
 // El controlador conecta las peticiones HTTP con el servicio.
 @Controller('libros')
@@ -18,8 +25,22 @@ export class LibrosController {
   constructor(private readonly librosService: LibrosService) {}
 
   @Post()
-  crear(@Body() datos: CrearLibroDto) {
-    return this.librosService.crear(datos);
+  @UseInterceptors(PortadasInterceptor,
+    FileInterceptor('portada', {
+      storage: memoryStorage(),
+      limits : {
+        fileSize : MAX_PORTADA_BYTES,
+        files: 1,
+        fields: 6,
+        parts : 8,
+        fieldSize : 4096,
+        fieldNameSize: 100,
+      }
+    })
+  )
+  crear(@Body() datos: CrearLibroDto,
+  @UploadedFile(PortadasPipe) portada? : Express.Multer.File) {
+    return this.librosService.crear(datos, portada?.buffer);
   }
 
   @Get()

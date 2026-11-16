@@ -69,18 +69,19 @@ export class PortadasService {
     });
   }
 
-  async eliminar(publicId?: string): Promise<void> {
-    if (!publicId) return;
+  async eliminar(publicId: string): Promise<void> {
+    const opciones = this.opciones();
     try {
       const resultado = (await cloudinary.uploader.destroy(publicId, {
-        ...this.opciones(),
+        ...opciones,
         resource_type: 'image',
         invalidate: true,
       })) as { result: string };
       if (!['ok', 'not found'].includes(resultado.result))
         throw new Error('No eliminado');
     } catch {
-      this.logger.warn(`Pendiente de limpieza en Cloudinary: ${publicId}`);
+      this.logger.warn(`Falló el borrado en Cloudinary: ${publicId}`);
+      throw new BadGatewayException('No se pudo borrar la portada');
     }
   }
 }

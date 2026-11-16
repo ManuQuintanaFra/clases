@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -14,6 +15,8 @@ import { PortadasService } from './portadas.service';
 
 @Injectable()
 export class LibrosService {
+  private readonly logger = new Logger(LibrosService.name);
+
   constructor(
     @InjectModel(LibroMongo.name) private readonly modelo: Model<LibroMongo>,
     private readonly portadas: PortadasService,
@@ -39,7 +42,11 @@ export class LibrosService {
         }),
       );
     } catch (error) {
-      await this.portadas.eliminar(subida.publicId);
+      try {
+        await this.portadas.eliminar(subida.publicId);
+      } catch {
+        this.logger.warn(`Pendiente de limpieza en Cloudinary: ${subida.publicId}`);
+      }
       throw error;
     }
   }
@@ -75,9 +82,11 @@ export class LibrosService {
 
   async eliminar(id: string): Promise<void> {
     this.validarId(id);
-    const libro = await this.modelo.findByIdAndDelete(id).exec();
+    const libro = await this.modelo.findById(id).exec();
     if (!libro) throw new NotFoundException('No existe el libro');
-    await this.portadas.eliminar(libro.portada_public_id);
+    if (libro.portada_public_id)
+      await this.portadas.eliminar(libro.portada_public_id);
+    await this.modelo.findByIdAndDelete(id).exec();
   }
 
   async reservar(id: string): Promise<Libro> {

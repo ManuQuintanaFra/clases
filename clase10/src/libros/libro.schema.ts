@@ -9,6 +9,10 @@ export class LibroMongo {
   autor!: string;
   @Prop({ required: true })
   portada_url!: string;
+
+  @Prop()
+  portada_public_id?:string;
+  
   @Prop({ required: true, trim: true })
   genero!: string;
   @Prop({ required: true })

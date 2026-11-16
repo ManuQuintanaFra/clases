@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { BadGatewayException, INestApplication, ValidationPipe } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import request from 'supertest';
@@ -229,6 +229,9 @@ describe('Libros HTTP (persistencia simulada)', () => {
       .expect(200)
       .expect(respuesta.body);
     await api.post('/libros/' + libro.id + '/portada').expect(404);
+    eliminar.mockRejectedValueOnce(new BadGatewayException());
+    await api.delete('/libros/' + libro.id).expect(502);
+    await api.get('/libros/' + libro.id).expect(200);
     await api.delete('/libros/' + libro.id).expect(204);
     expect(eliminar).toHaveBeenCalledWith('uno');
   });

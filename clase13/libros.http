@@ -1,0 +1,88 @@
+@token = pegar-access-token
+@baseUrl = http://localhost:3100
+# Copiar aquí el id que devuelve POST /libros.
+@id = 000000000000000000000000
+
+### Crear
+POST {{baseUrl}}/libros
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "El principito",
+  "autor": "Antoine de Saint-Exupéry",
+  "genero": "Fábula",
+  "portada_url": "https://example.com/portada.jpg",
+  "aniopublicacion": 1943,
+  "ejemplares_restantes": 3
+}
+
+### Listar
+GET {{baseUrl}}/libros
+Authorization: Bearer {{token}}
+
+### Buscar
+GET {{baseUrl}}/libros/{{id}}
+Authorization: Bearer {{token}}
+
+### Actualizar
+PATCH {{baseUrl}}/libros/{{id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "El Principito",
+  "ejemplares_restantes": 2
+}
+
+### Reservar
+POST {{baseUrl}}/libros/{{id}}/reservar
+Authorization: Bearer {{token}}
+
+### Eliminar
+DELETE {{baseUrl}}/libros/{{id}}
+Authorization: Bearer {{token}}
+
+### Datos inválidos (400)
+POST {{baseUrl}}/libros
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": ""
+}
+
+
+### Crear con archivo (reemplazar la ruta por una imagen local)
+POST {{baseUrl}}/libros
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=LibroBoundary
+
+--LibroBoundary
+Content-Disposition: form-data; name="titulo"
+
+El principito
+--LibroBoundary
+Content-Disposition: form-data; name="autor"
+
+Antoine de Saint-Exupéry
+--LibroBoundary
+Content-Disposition: form-data; name="genero"
+
+Fábula
+--LibroBoundary
+Content-Disposition: form-data; name="aniopublicacion"
+
+1943
+--LibroBoundary
+Content-Disposition: form-data; name="ejemplares_restantes"
+
+3
+--LibroBoundary
+Content-Disposition: form-data; name="portada"; filename="portada.jpg"
+Content-Type: image/jpeg
+
+< C:/imagenes/portada.jpg
+--LibroBoundary--
+
+

@@ -5,6 +5,7 @@ import { LibrosModule } from './libros/libros.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
+import { PortadasService } from './portadas/portadas.service';
 
 // Node 22 carga las variables antes de configurar la conexión a Atlas.
 if (existsSync('.env')) loadEnvFile('.env');
@@ -19,6 +20,6 @@ if (!mongoUri) {
 @Module({
   imports: [MongooseModule.forRoot(mongoUri), LibrosModule],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, PortadasService],
 })
 export class AppModule {}
